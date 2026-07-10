@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Thi Online - Firebase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- FIREBASE SDKS -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #D13B7C; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ==========================================
+        // CẤU HÌNH FIREBASE (Thay đoạn này bằng config của bạn)
+        // ==========================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCj_u4OH9ufbEmbORfXV8kQKcwCHbCBLvM",
+  authDomain: "thi-truc-tuyen-a3275.firebaseapp.com",
+  projectId: "thi-truc-tuyen-a3275",
+  storageBucket: "thi-truc-tuyen-a3275.firebasestorage.app",
+  messagingSenderId: "174045575895",
+  appId: "1:174045575895:web:246f186f13f2329d414e92",
+  measurementId: "G-FYJVRCXY9K"
+};
+        
+        // Khởi tạo Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+        // ==========================================
+
+        // --- Icons (Giữ nguyên như cũ) ---
+        const IconUser = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+        const IconLock = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+        const IconBook = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>;
+        const IconUsers = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+        const IconPlus = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>;
+        const IconLogout = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
+        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+        const IconLayout = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>;
+        const IconGrad = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10v6"/><path d="M6 12a6 6 0 0 1 12 0v6a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-6Z"/><path d="M12 2v8"/></svg>;
+        const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+        const IconMenu = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+        const IconClose = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+        const IconTrash = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>;
+        const IconFile = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>;
+
+        const ADMIN_CREDENTIALS = { username: 'ddluong', password: '7504', fullName: 'Đỗ Duy Lượng' };
+
+        const App = () => {
+          const [user, setUser] = useState(null); 
+          const [view, setView] = useState('login'); 
+          const [currentExam, setCurrentExam] = useState(null);
+          const [activeClassId, setActiveClassId] = useState(null);
+          
+          const [allUsers, setAllUsers] = useState([]); 
+          const [classes, setClasses] = useState([]); 
+          const [exams, setExams] = useState([]); 
+          const [results, setResults] = useState([]); 
+
+          // Lắng nghe dữ liệu thời gian thực từ Firebase (Realtime Listener)
+          useEffect(() => {
+            const usersRef = db.ref('users');
+            const classesRef = db.ref('classes');
+            const examsRef = db.ref('exams');
+            const resultsRef = db.ref('results');
+
+            const onUsersChange = usersRef.on('value', snapshot => {
+              const data = snapshot.val();
+              setAllUsers(data ? Object.values(data) : []);
+            });
+            const onClassesChange = classesRef.on('value', snapshot => {
+              const data = snapshot.val();
+              setClasses(data ? Object.values(data) : []);
+            });
+            const onExamsChange = examsRef.on('value', snapshot => {
+              const data = snapshot.val();
+              setExams(data ? Object.values(data) : []);
+            });
+            const onResultsChange = resultsRef.on('value', snapshot => {
+              const data = snapshot.val();
+              setResults(data ? Object.values(data) : []);
+            });
+
+            return () => {
+              usersRef.off('value', onUsersChange);
+              classesRef.off('value', onClassesChange);
+              examsRef.off('value', onExamsChange);
+              resultsRef.off('value', onResultsChange);
+            };
+          }, []);
+
+          const handleLogin = (username, password, fullName, role) => {
+            if (!username || !password) {
+              alert('Vui lòng nhập đầy đủ tài khoản và mật khẩu!');
+              return;
+            }
+
+            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+              setUser({ username, role: 'admin', fullName: ADMIN_CREDENTIALS.fullName });
+              setView('admin-dashboard');
+              return;
+            }
+            
+            if (role === 'student') {
+              const userDb = allUsers.find(u => u.username === username);
+              if (userDb) {
+                if (userDb.password === password) {
+                  setUser({ ...userDb, role: 'student' });
+                  setView('student-dashboard');
+                } else {
+                  alert('Sai mật khẩu!');
+                }
+              } else {
+                const newUser = { username, fullName: fullName || 'Học sinh', password: password, joinedClasses: [] };
+                // Lưu học sinh mới lên Firebase
+                db.ref('users').push(newUser);
+                setUser({ ...newUser, role: 'student' });
+                setView('student-dashboard');
+              }
+            } else {
+              alert('Sai thông tin đăng nhập!');
+            }
+          };
+
+          const handleLogout = () => { setUser(null); setView('login'); };
+
+          const joinClass = (username, classId) => {
+            const cleanId = classId.trim();
+            const foundClass = classes.find(c => c.id === cleanId);
+            if (!foundClass) { 
+              alert('Mã lớp không tồn tại!'); 
+              return false; 
+            }
+            
+            // Cập nhật danh sách lớp đã tham gia của user lên Firebase
+            const userIdx = allUsers.findIndex(u => u.username === username);
+            if (userIdx !== -1) {
+              const userRef = db.ref('users').orderByChild('username').equalTo(username);
+              userRef.once('value', snapshot => {
+                const key = Object.keys(snapshot.val())[0];
+                const currentJoined = allUsers[userIdx].joinedClasses || [];
+                if (!currentJoined.includes(cleanId)) {
+                  db.ref(`users/${key}/joinedClasses`).push(cleanId);
+                }
+              });
+            }
+            return true;
+          };
+
+          const submitExam = (examId, score, userAnswers) => {
+            db.ref('results').push({ 
+              userId: user.username, 
+              userName: user.fullName, 
+              examId, 
+              score, 
+              answers: userAnswers, 
+              date: new Date().toLocaleString() 
+            });
+          };
+
+          if (view === 'login') return <LoginPage onLogin={handleLogin} />;
+          
+          if (user?.role === 'admin') {
+            return (
+              <AdminLayout user={user} onLogout={handleLogout}>
+                {view === 'admin-dashboard' ? (
+                  <AdminDashboard 
+                    exams={exams} classes={classes} allUsers={allUsers} results={results} 
+                    setExams={(newList) => db.ref('exams').set(newList.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {}))} 
+                    setClasses={(newList) => db.ref('classes').set(newList.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {}))} 
+                    setAllUsers={(newList) => db.ref('users').set(newList.reduce((acc, cur) => ({...acc, [cur.username]: cur}), {}))} 
+                    setView={setView} 
+                    onEnterClass={(id) => { setActiveClassId(id); setView('classroom'); }} 
+                  />
+                ) : view === 'admin-create-exam' ? (
+                  <CreateExamPage onBack={() => setView('admin-dashboard')} setExams={(newEx) => db.ref('exams').push(newEx)} classes={classes} />
+                ) : view === 'classroom' ? (
+                  <ClassRoom role="admin" classId={activeClassId} exams={exams} allUsers={allUsers} results={results} user={user} onBack={() => setView('admin-dashboard')} setCurrentExam={setCurrentExam} setView={setView} setAllUsers={(newList) => db.ref('users').set(newList.reduce((acc, cur) => ({...acc, [cur.username]: cur}), {}))} />
+                ) : null}
+              </AdminLayout>
+            );
+          }
+
+          if (user?.role === 'student') {
+            return (
+              <StudentLayout user={user} onLogout={handleLogout}>
+                {view === 'student-dashboard' ? (
+                  <StudentDashboard exams={exams} classes={classes} user={user} allUsers={allUsers} joinClass={joinClass} onEnterClass={(id) => { setActiveClassId(id); setView('classroom'); }} />
+                ) : view === 'classroom' ? (
+                  <ClassRoom role="student" classId={activeClassId} exams={exams} user={user} results={results} setCurrentExam={setCurrentExam} setView={setView} onBack={() => setView('student-dashboard')} />
+                ) : view === 'taking-exam' ? (
+                  <ExamInterface exam={currentExam} onFinish={() => setView('classroom')} onSubmit={submitExam} user={user} />
+                ) : null}
+              </StudentLayout>
+            );
+          }
+
+          return null;
+        };
+
+        // --- MANG CÁC COMPONENT CÒN LẠI GIỮ NGUYÊN VÀ CHỈ THAY ĐỔI HÀM LƯU DỮ LIỆU ---
+        // (Để ngắn gọn, tôi giữ cấu trúc logic như bạn cung cấp nhưng cập nhật các hàm set)
+
+        const LoginPage = ({ onLogin }) => {
+          const [isRegistering, setIsRegistering] = useState(false);
+          const [formData, setFormData] = useState({ username: '', password: '', fullName: '', role: 'student' });
+          return (
+            <div className="min-h-screen bg-[#D13B7C] flex items-center justify-center p-4 font-sans">
+              <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border-t-8 border-pink-800">
+                <div className="text-center mb-8">
+                  <div className="bg-[#D13B7C] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg text-white"><IconGrad /></div>
+                  <h1 className="text-2xl font-bold text-[#D13B7C]">Hệ Thống Thi Online</h1>
+                  <p className="text-gray-500">{isRegistering ? 'Tạo tài khoản học sinh' : 'Đăng nhập vào hệ thống'}</p>
+                </div>
+                <div className="space-y-4">
+                  {isRegistering && (
+                    <div className="relative">
+                      <div className="absolute left-3 top-3 text-gray-400"><IconUser /></div>
+                      <input type="text" placeholder="Họ và tên" className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none" onChange={(e) => setFormData({...formData, fullName: e.target.value})} />
+                    </div>
+                  )}
+                  <div className="relative">
+                    <div className="absolute left-3 top-3 text-gray-400"><IconUser /></div>
+                    <input type="text" placeholder=" Tên đăng nhập" className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none" onChange={(e) => setFormData({...formData, username: e.target.value})} />
+                  </div>
+                  <div className="relative">
+                    <div className="absolute left-3 top-3 text-gray-400"><IconLock /></div>
+                    <input type="password" placeholder="Mật khẩu" className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none" onChange={(e) => setFormData({...formData, password: e.target.value})} />
+                  </div>
+                  <button type="button" onClick={() => onLogin(formData.username, formData.password, formData.fullName, formData.role)} className="w-full bg-[#D13B7C] text-white py-3 rounded-lg font-bold hover:bg-pink-700 shadow-md active:scale-95 transition-all">
+                    {isRegistering ? 'ĐĂNG KÝ HỌC SINH' : 'ĐĂNG NHẬP'}
+                  </button>
+                  <div className="text-center mt-4">
+                    <button type="button" onClick={() => setIsRegistering(!isRegistering)} className="text-sm text-[#D13B7C] font-medium hover:underline">
+                      {isRegistering ? 'Quay lại' : 'Đăng ký học sinh'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const AdminLayout = ({ children, user, onLogout }) => {
+          const [isMenuOpen, setIsMenuOpen] = useState(false);
+          return (
+            <div className="min-h-screen flex bg-gray-100 font-sans relative">
+              <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#D13B7C] text-white flex items-center px-4 z-30 shadow-md">
+                <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-pink-700 rounded-lg transition-colors">
+                  <IconMenu />
+                </button>
+                <h2 className="ml-4 font-bold text-lg">Trang chủ</h2>
+              </div>
+              {isMenuOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsMenuOpen(false)} />}
+              <aside className={`fixed lg:static inset-y-0 left-0 w-64 bg-[#D13B7C] text-white flex flex-col shadow-xl transition-transform duration-300 z-50 
+                ${isMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                <div className="p-6 text-center border-b border-pink-400 bg-pink-800 relative">
+                  <button onClick={() => setIsMenuOpen(false)} className="lg:hidden absolute right-4 top-6 text-pink-200"><IconClose /></button>
+                  <h2 className="text-xl font-bold">Giáo viên</h2>
+                  <p className="text-sm opacity-90">{user.fullName}</p>
+                </div>
+                <nav className="flex-1 p-4 space-y-2">
+                  <div className="flex items-center p-3 bg-pink-700 rounded-lg font-medium"><div className="mr-3"><IconLayout /></div>Quản lí tổng hợp</div>
+                </nav>
+                <button onClick={onLogout} className="p-4 flex items-center justify-center text-pink-200 hover:text-white font-bold border-t border-pink-400 bg-pink-900">
+                  <div className="mr-2"><IconLogout /></div> Đăng xuất
+                </button>
+              </aside>
+              <main className="flex-1 p-4 md:p-8 pt-20 lg:pt-8 overflow-y-auto">{children}</main>
+            </div>
+          );
+        };
+
+        const StudentLayout = ({ children, user, onLogout }) => {
+          const [isMenuOpen, setIsMenuOpen] = useState(false);
+          return (
+            <div className="min-h-screen flex bg-pink-50 font-sans relative">
+              <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-pink-100 text-gray-800 flex items-center px-4 z-30 shadow-sm">
+                <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-pink-50 rounded-lg transition-colors text-[#D13B7C]">
+                  <IconMenu />
+                </button>
+                <h2 className="ml-4 font-bold text-lg">{user.fullName}</h2>
+              </div>
+              {isMenuOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsMenuOpen(false)} />}
+              <aside className={`fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-pink-100 flex flex-col shadow-lg transition-transform duration-300 z-50 
+                ${isMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                <div className="p-6 text-center border-b border-pink-50 relative">
+                  <button onClick={() => setIsMenuOpen(false)} className="lg:hidden absolute right-4 top-6 text-gray-400"><IconClose /></button>
+                  <div className="bg-[#D13B7C] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 text-white shadow-md"><IconUser /></div>
+                  <h2 className="font-bold text-gray-800">{user.fullName}</h2>
+                  <p className="text-xs text-gray-400">Học sinh</p>
+                </div>
+                <nav className="flex-1 p-4 space-y-2">
+                  <div className="flex items-center p-3 bg-pink-100 text-pink-700 rounded-lg font-medium"><div className="mr-3"><IconLayout /></div> Trang chủ</div>
+                </nav>
+                <button onClick={onLogout} className="p-4 flex items-center justify-center text-gray-400 hover:text-red-500 border-t border-pink-50">
+                  <div className="mr-2"><IconLogout /></div> Đăng xuất
+                </button>
+              </aside>
+              <main className="flex-1 p-4 md:p-8 pt-20 lg:pt-8 overflow-y-auto">{children}</main>
+            </div>
+          );
+        };
+
+        const AdminDashboard = ({ exams, classes, allUsers, results, setExams, setClasses, setView, onEnterClass }) => {
+          const [newClassName, setNewClassName] = useState('');
+          const addClass = () => {
+            if (!newClassName) return;
+            const id = 'CLS' + Math.floor(Math.random() * 10000);
+            const updatedClasses = [...classes, { id, name: newClassName }];
+            setClasses(updatedClasses);
+            setNewClassName('');
+          };
+
+          const deleteExam = (id) => {
+            if(window.confirm('Bạn chắc chắn muốn xóa đề thi này?')) {
+              setExams(exams.filter(ex => ex.id !== id));
+            }
+          };
+
+          return (
+            <div className="space-y-8">
+              <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Quản Lý Hệ Thống</h1>
+                <button onClick={() => setView('admin-create-exam')} className="bg-[#D13B7C] text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-pink-700 font-bold w-full sm:w-auto justify-center">
+                  <div className="mr-2"><IconPlus /></div> Tạo Đề Thi
+                </button>
+              </header>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center"><div className="mr-2 text-pink-600"><IconBook /></div> Đề Thi Đã Xuất Bản</h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-gray-50 text-gray-600 text-sm border-b">
+                        <tr><th className="p-3">Tên đề</th><th className="p-3">Lớp</th><th className="p-3">Số câu</th><th className="p-3 text-center">Hành động</th></tr>
+                      </thead>
+                      <tbody className="text-sm">
+                        {exams.length === 0 ? <tr className="text-gray-400"><td colSpan="4" className="p-8 text-center">Chưa có đề thi nào.</td></tr> : exams.map(ex => <tr key={ex.id} className="border-b hover:bg-gray-50">
+                          <td className="p-3 font-medium">{ex.title}</td><td className="p-3">{ex.classId}</td><td className="p-3">{ex.questions?.length || 0} câu</td>
+                          <td className="p-3 text-center">
+                            <button onClick={() => deleteExam(ex.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Xóa đề thi"><IconTrash /></button>
+                          </td>
+                        </tr>)}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center"><div className="mr-2 text-pink-600"><IconUsers /></div> Quản Lý Lớp</h2>
+                  <div className="flex gap-2 mb-4">
+                    <input type="text" placeholder=" Tên lớp..." className="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-pink-400" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} />
+                    <button onClick={addClass} className="bg-[#D13B7C] text-white p-2 rounded-lg hover:bg-pink-700"><IconPlus /></button>
+                  </div>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {classes.length === 0 && <p className="text-center text-gray-400 text-sm py-4">Hãy tạo lớp đầu tiên.</p>}
+                    {classes.map(cls => <div key={cls.id} onClick={() => onEnterClass(cls.id)} className="p-3 bg-gray-50 rounded-lg flex justify-between items-center border border-gray-100 group hover:border-pink-300 transition-all cursor-pointer">
+                      <div><p className="font-medium text-sm">{cls.name}</p><p className="text-xs text-gray-500 font-mono">ID: {cls.id}</p></div>
+                      <span className="text-xs text-pink-600 font-bold uppercase">Vào Lớp</span>
+                    </div>)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const CreateExamPage = ({ onBack, setExams, classes }) => {
+          const [meta, setMeta] = useState({ title: '', type: 'VSAT', duration: 60, classId: '', openDate: '', closeDate: '', allowMultipleAttempts: false });
+          const [activeTab, setActiveTab] = useState(0);
+          const [isInPreview, setIsInPreview] = useState(false);
+          const [structuredData, setStructuredData] = useState({ VSAT: { part1: [], part2: [], part3: [], part4: [] }, THPTQG: { part1: [], part2: [] } });
+
+          const updateStructured = (mode, part, index, field, value) => {
+            setStructuredData(prev => {
+              const newData = { ...prev };
+              if (field === 'REMOVE') newData[mode][part] = newData[mode][part].filter((_, i) => i !== index);
+              else if (field === 'FULL') newData[mode][part][index] = value;
+              else newData[mode][part][index] = { ...newData[mode][part][index], [field]: value };
+              return newData;
+            });
+          };
+
+          const addVSATPart1 = () => { setStructuredData(prev => ({ ...prev, VSAT: { ...prev.VSAT, part1: [...prev.VSAT.part1, { text: '', subQuestions: Array(4).fill(0).map((_, i) => ({ id: i+1, text: '', correct: 'T' })) }] } })); };
+          const addVSATPart2 = () => { setStructuredData(prev => ({ ...prev, VSAT: { ...prev.VSAT, part2: [...prev.VSAT.part2, { context: '', questions: Array(3).fill(0).map((_, i) => ({ text: '', options: ['A','B','C','D'].map(l => ({letter: l, text: ''})), correct: 'A' })) }] } })); };
+          const addVSATPart3 = () => { setStructuredData(prev => ({ ...prev, VSAT: { ...prev.VSAT, part3: [...prev.VSAT.part3, { text: '', colA: Array(4).fill(0).map((_, i) => ({id: i+1, text: ''})), colB: Array(6).fill(0).map((_, i) => ({id: String.fromCharCode(65+i), text: ''})), correct: '' }] } })); };
+          const addVSATPart4 = () => { setStructuredData(prev => ({ ...prev, VSAT: { ...prev.VSAT, part4: [...prev.VSAT.part4, { text: '', correct: '' }] } })); };
+          const addTHPTPart1 = () => { setStructuredData(prev => ({ ...prev, THPTQG: { ...prev.THPTQG, part1: [...prev.THPTQG.part1, { text: '', options: ['A','B','C','D'].map(l => ({letter: l, text: ''})), correct: 'A' }] } })); };
+          const addTHPTPart2 = () => { setStructuredData(prev => ({ ...prev, THPTQG: { ...prev.THPTQG, part2: [...prev.THPTQG.part2, { context: '', questions: Array(4).fill(0).map((_, i) => ({ text: '', correct: 'T' })) }] } })); };
+
+          const handleSave = () => {
+            if(!meta.title || !meta.classId) { alert('Xin vui lòng nhập tiêu đề và chọn Lớp!'); return; }
+            let finalQuestions = [];
+            if (meta.type === 'VSAT') {
+              const d = structuredData.VSAT;
+              d.part1.forEach((q, i) => finalQuestions.push({ id: i+1, type: 'GRID_TF', text: q.text, subQuestions: q.subQuestions }));
+              d.part2.forEach((grp) => { grp.questions.forEach((q, qi) => finalQuestions.push({ id: finalQuestions.length + 1, type: 'MCQ', context: grp.context, text: q.text, options: q.options, correctAnswer: q.correct })); });
+              d.part3.forEach((q) => finalQuestions.push({ id: finalQuestions.length + 1, type: 'MATCH', text: q.text, colA: q.colA, colB: q.colB, correctAnswer: q.correct }));
+              d.part4.forEach((q) => finalQuestions.push({ id: finalQuestions.length + 1, type: 'SHORT', text: q.text, correctAnswer: q.correct }));
+            } else {
+              const d = structuredData.THPTQG;
+              d.part1.forEach((q, i) => finalQuestions.push({ id: i+1, type: 'MCQ', text: q.text, options: q.options, correctAnswer: q.correct }));
+              d.part2.forEach((grp) => { finalQuestions.push({ id: finalQuestions.length + 1, type: 'GRID_TF', context: grp.context, text: 'Xét các nhận định sau:', subQuestions: grp.questions.map((q, i) => ({ id: i+1, text: q.text, correct: q.correct })) }); });
+            }
+            setExams({ ...meta, id: 'EX' + Date.now(), questions: finalQuestions });
+            onBack();
+          };
+
+          if (isInPreview) {
+            return (
+              <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl border shadow-sm">
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-2xl font-bold">Xem Lại Đề Thi</h1>
+                  <div className="space-x-2">
+                    <button onClick={() => setIsInPreview(false)} className="px-4 py-2 bg-gray-200 rounded-lg">Sửa lại</button>
+                    <button onClick={handleSave} className="px-4 py-2 bg-pink-600 text-white rounded-lg font-bold">Xuất Bản</button>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <p><b>Tiêu đề:</b> {meta.title} | <b>Loại:</b> {meta.type} | <b>Lớp:</b> {meta.classId}</p>
+                  <p><b>Thời gian:</b> {meta.duration} phút | <b>Lượt thi:</b> {meta.allowMultipleAttempts ? 'Nhiều lần' : '1 lần duy nhất'}</p>
+                  <hr/>
+                  <div className="text-gray-600 italic text-center p-4">Đề thi đã được định dạng thành công. Vui lòng kiểm tra lại thông tin trước khi xuất bản.</div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+              <div className="flex items-center mb-6">
+                <button onClick={onBack} className="mr-4 text-gray-500 hover:text-gray-800 font-medium">← Quay lại</button>
+                <h1 className="text-2xl font-bold text-gray-800">Xây Dựng Đề Thi</h1>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 bg-gray-50 p-6 rounded-xl border">
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Tiêu đề thi</label>
+                  <input type="text" className="w-full p-2 border rounded-lg" placeholder="Ví dụ: Kiểm tra học kỳ 1" onChange={(e) => setMeta({...meta, title: e.target.value})} />
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Loại đề</label>
+                  <select className="w-full p-2 border rounded-lg" onChange={(e) => { setMeta({...meta, type: e.target.value}); setActiveTab(0); }} value={meta.type}>
+                    <option value="VSAT">VSAT ( Phần 4)</option>
+                    <option value="THPTQG">THPTQG ( Phần 2)</option>
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Gán cho lớp</label>
+                  <select className="w-full p-2 border rounded-lg" onChange={(e) => setMeta({...meta, classId: e.target.value})} value={meta.classId}>
+                    <option value="">--Chọn lớp --</option>
+                    {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.id})</option>)}
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Thời gian làm bài (phút)</label>
+                  <input type="number" className="w-full p-2 border rounded-lg" value={meta.duration} onChange={(e) => setMeta({...meta, duration: e.target.value})} />
+                </div>
+                <div className="space-y-3">
+                   <label className="block text-sm font-medium">Số lượt làm</label>
+                   <select className="w-full p-2 border rounded-lg" value={meta.allowMultipleAttempts} onChange={(e) => setMeta({...meta, allowMultipleAttempts: e.target.value === 'true'})}>
+                      <option value="false">Chỉ 1 lần</option>
+                      <option value="true"> Nhiều lần</option>
+                   </select>
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium"> Ngày mở</label>
+                  <input type="datetime-local" className="w-full p-2 border rounded-lg" onChange={(e) => setMeta({...meta, openDate: e.target.value})} />
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Ngày đóng</label>
+                  <input type="datetime-local" className="w-full p-2 border rounded-lg" onChange={(e) => setMeta({...meta, closeDate: e.target.value})} />
+                </div>
+              </div>
+              
+              {/* Tabs content (Giữ nguyên logic cũ) */}
+              <div className="border rounded-xl overflow-hidden">
+                <div className="flex bg-gray-100 border-b overflow-x-auto">
+                  {meta.type === 'VSAT' ? (
+                    <>
+                      <button onClick={() => setActiveTab(0)} className={`px-6 py-3 text-sm font-bold whitespace-nowrap ${activeTab===0?'bg-white text-pink-600 border-t-2 border-pink-600':'text-gray-500'}`}> Phần I: Đúng/Sai</button>
+                      <button onClick={() => setActiveTab(1)} className={`px-6 py-3 text-sm font-bold whitespace-nowrap ${activeTab===1?'bg-white text-pink-600 border-t-2 border-pink-600':'text-gray-500'}`}> Phần II: Câu hỏi trắc nghiệm</button>
+                      <button onClick={() => setActiveTab(2)} className={`px-6 py-3 text-sm font-bold whitespace-nowrap ${activeTab===2?'bg-white text-pink-600 border-t-2 border-pink-600':'text-gray-500'}`}> Phần III: Ghép cặp</button>
+                      <button onClick={() => setActiveTab(3)} className={`px-6 py-3 text-sm font-bold whitespace-nowrap ${activeTab===3?'bg-white text-pink-600 border-t-2 border-pink-600':'text-gray-500'}`}> Phần IV: Trả lời ngắn</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setActiveTab(0)} className={`px-6 py-3 text-sm font-bold whitespace-nowrap ${activeTab===0?'bg-white text-pink-600 border-t-2 border-pink-600':'text-gray-500'}`}> Phần I: Câu hỏi trắc nghiệm</button>
+                      <button onClick={() => setActiveTab(1)} className={`px-6 py-3 text-sm font-bold whitespace-nowrap ${activeTab===1?'bg-white text-pink-600 border-t-2 border-pink-600':'text-gray-500'}`}> Phần II: Đúng/Sai</button>
+                    </>
+                  )}
+                </div>
+                <div className="p-6 min-h-[400px] max-h-[600px] overflow-y-auto">
+                  {meta.type === 'VSAT' && activeTab === 0 && (
+                    <div className="space-y-6">
+                      <button onClick={addVSATPart1} className="bg-pink-100 text-pink-700 px-3 py-1 rounded-lg text-sm font-bold">+ Thêm câu Đúng/Sai</button>
+                      {structuredData.VSAT.part1.map((q, i) => (
+                        <div key={i} className="p-4 border rounded-xl space-y-3 bg-gray-50">
+                          <div className="flex justify-between"><span className="font-bold">Câu {i+1}</span><button onClick={() => updateStructured('VSAT', 'part1', i, 'REMOVE')} className="text-red-500 text-xs">Xóa</button></div>
+                          <input type="text" placeholder="Thông tin/Câu hỏi" className="w-full p-2 border rounded" value={q.text} onChange={(e) => updateStructured('VSAT', 'part1', i, 'text', e.target.value)} />
+                          <table className="w-full text-xs border">
+                            <thead className="bg-gray-200"><tr className="text-gray-600"><th className="p-1 border">Nhận định</th><th className="p-1 border">Đáp án</th></tr></thead>
+                            <tbody>{q.subQuestions.map((sq, si) => (
+                              <tr key={si}><td className="p-1 border"><input type="text" className="w-full p-1" value={sq.text} onChange={(e) => { const newSubs=[...q.subQuestions]; newSubs[si].text=e.target.value; updateStructured('VSAT', 'part1', i, 'subQuestions', newSubs); }}/></td><td className="p-1 border text-center"><select className="p-1" value={sq.correct} onChange={(e) => { const newSubs=[...q.subQuestions]; newSubs[si].correct=e.target.value; updateStructured('VSAT', 'part1', i, 'subQuestions', newSubs); }}><option value="T">Đ</option><option value="F">S</option></select></td></tr>
+                            ))}</tbody>
+                          </table>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Các Tab khác giữ nguyên logic render của bạn... */}
+                  {meta.type === 'VSAT' && activeTab === 1 && (
+                    <div className="space-y-6">
+                      <button onClick={addVSATPart2} className="bg-pink-100 text-pink-700 px-3 py-1 rounded-lg text-sm font-bold">+ Thêm Nhóm Câu Hỏi</button>
+                      {structuredData.VSAT.part2.map((grp, i) => (
+                        <div key={i} className="p-4 border rounded-xl space-y-4 bg-gray-50">
+                          <div className="flex justify-between"><span className="font-bold">Nhóm ngữ liệu {i+1}</span><button onClick={() => updateStructured('VSAT', 'part2', i, 'REMOVE')} className="text-red-500 text-xs">Xóa</button></div>
+                          <textarea placeholder="Ngữ liệu chung cho 3 câu hỏi" className="w-full p-2 border rounded" value={grp.context} onChange={(e) => updateStructured('VSAT', 'part2', i, 'context', e.target.value)} />
+                          <div className="space-y-4 ml-4">
+                            {grp.questions.map((q, qi) => (
+                              <div key={qi} className="p-3 border rounded bg-white space-y-2">
+                                <p className="text-xs font-bold">Câu hỏi {qi+1}</p>
+                                <input type="text" placeholder="Nội dung câu hỏi" className="w-full p-2 border rounded text-sm" value={q.text} onChange={(e) => { const newQs=[...grp.questions]; newQs[qi].text=e.target.value; updateStructured('VSAT', 'part2', i, 'questions', newQs); }}/>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {q.options.map((opt, oi) => (
+                                    <div key={oi} className="flex items-center gap-2">
+                                      <input type="radio" name={`vsat-p2-ui-${i}-${qi}`} checked={q.correct === opt.letter} onChange={() => { const newQs=[...grp.questions]; newQs[qi].correct=opt.letter; updateStructured('VSAT', 'part2', i, 'questions', newQs); }}/>
+                                      <input type="text" placeholder={opt.letter} className="w-full p-1 border rounded text-xs" value={opt.text} onChange={(e) => { const newQs=[...grp.questions]; newQs[qi].options[oi].text=e.target.value; updateStructured('VSAT', 'part2', i, 'questions', newQs); }}/>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {meta.type === 'VSAT' && activeTab === 2 && (
+                    <div className="space-y-6">
+                      <button onClick={addVSATPart3} className="bg-pink-100 text-pink-700 px-3 py-1 rounded-lg text-sm font-bold">+ Thêm câu</button>
+                      {structuredData.VSAT.part3.map((q, i) => (
+                        <div key={i} className="p-4 border rounded-xl space-y-4 bg-gray-50">
+                           <div className="flex justify-between"><span className="font-bold">Câu ghép {i+1}</span><button onClick={() => updateStructured('VSAT', 'part3', i, 'REMOVE')} className="text-red-500 text-xs">Xóa</button></div>
+                          <input type="text" placeholder=" Hướng dẫn (VD: Ghép sự kiện với kết quả)" className="w-full p-2 border rounded" value={q.text} onChange={(e) => updateStructured('VSAT', 'part3', i, 'text', e.target.value)} />
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2"><p className="text-xs font-bold">Cột A (4 ý)</p>{q.colA?.map((item, idx) => <input key={idx} className="w-full p-1 border rounded text-xs" value={item.text} onChange={(e) => { const newA=[...q.colA]; newA[idx].text=e.target.value; updateStructured('VSAT', 'part3', i, 'colA', newA); }} />)}</div>
+                            <div className="space-y-2"><p className="text-xs font-bold">Cột B (6 ý)</p>{q.colB?.map((item, idx) => <input key={idx} className="w-full p-1 border rounded text-xs" value={item.text} onChange={(e) => { const newB=[...q.colB]; newB[idx].text=e.target.value; updateStructured('VSAT', 'part3', i, 'colB', newB); }} />)}</div>
+                          </div>
+                          <input type="text" placeholder="Đáp án đúng: 1#A; 2#C; 3#B; 4#E" className="w-full p-2 border rounded text-sm" value={q.correct} onChange={(e) => updateStructured('VSAT', 'part3', i, 'correct', e.target.value)} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {meta.type === 'VSAT' && activeTab === 3 && (
+                    <div className="space-y-6">
+                      <button onClick={addVSATPart4} className="bg-pink-100 text-pink-700 px-3 py-1 rounded-lg text-sm font-bold">+ Thêm Câu Trả Lời Ngắn</button>
+                      {structuredData.VSAT.part4.map((q, i) => (
+                        <div key={i} className="p-4 border rounded-xl space-y-3 bg-gray-50">
+                          <div className="flex justify-between"><span className="font-bold">Câu {i+1}</span><button onClick={() => updateStructured('VSAT', 'part4', i, 'REMOVE')} className="text-red-500 text-xs">Xóa</button></div>
+                          <input type="text" placeholder="Câu hỏi" className="w-full p-2 border rounded" value={q.text} onChange={(e) => updateStructured('VSAT', 'part4', i, 'text', e.target.value)} />
+                          <input type="text" placeholder="Đáp án chuẩn" className="w-full p-2 border rounded text-sm" value={q.correct} onChange={(e) => updateStructured('VSAT', 'part4', i, 'correct', e.target.value)} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {meta.type === 'THPTQG' && activeTab === 0 && (
+                    <div className="space-y-6">
+                      <button onClick={addTHPTPart1} className="bg-pink-100 text-pink-700 px-3 py-1 rounded-lg text-sm font-bold">+ Thêm Câu Trắc Nghiệm</button>
+                      {structuredData.THPTQG.part1.map((q, i) => (
+                        <div key={i} className="p-4 border rounded-xl space-y-3 bg-gray-50">
+                          <div className="flex justify-between"><span className="font-bold">Câu {i+1}</span><button onClick={() => updateStructured('THPTQG', 'part1', i, 'REMOVE')} className="text-red-500 text-xs">Xóa</button></div>
+                          <input type="text" placeholder="Câu hỏi" className="w-full p-2 border rounded" value={q.text} onChange={(e) => updateStructured('THPTQG', 'part1', i, 'text', e.target.value)} />
+                          <div className="grid grid-cols-2 gap-2">
+                            {q.options.map((opt, oi) => (
+                              <div key={oi} className="flex items-center gap-2">
+                                <input type="radio" name={`thpt-p1-ui-${i}`} checked={q.correct === opt.letter} onChange={() => { const updatedQ={...q, correct: opt.letter}; updateStructured('THPTQG', 'part1', i, 'FULL', updatedQ); }}/>
+                                <input type="text" className="w-full p-1 border rounded text-xs" value={opt.text} onChange={(e) => { const newOptions=[...q.options]; newOptions[oi] = {...opt, text: e.target.value}; const updatedQ = {...q, options: newOptions}; updateStructured('THPTQG', 'part1', i, 'FULL', updatedQ); }} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {meta.type === 'THPTQG' && activeTab === 1 && (
+                    <div className="space-y-6">
+                      <button onClick={addTHPTPart2} className="bg-pink-100 text-pink-700 px-3 py-1 rounded-lg text-sm font-bold">+ Thêm Nhóm Đúng/Sai</button>
+                      {structuredData.THPTQG.part2.map((grp, i) => (
+                        <div key={i} className="p-4 border rounded-xl space-y-4 bg-gray-50">
+                            <div className="flex justify-between"><span className="font-bold">Câu đúng/Sai {i+1}</span><button onClick={() => updateStructured('THPTQG', 'part2', i, 'REMOVE')} className="text-red-500 text-xs">Xóa</button></div>
+                          <textarea placeholder="Ngữ liệu cho câu này..." className="w-full p-2 border rounded" value={grp.context} onChange={(e) => updateStructured('THPTQG', 'part2', i, 'context', e.target.value)} />
+                          <div className="space-y-3 ml-4">
+                            {grp.questions.map((q, qi) => (
+                              <div key={qi} className="flex items-center gap-4 p-2 bg-white border rounded">
+                                <span className="text-xs font-bold w-4">{String.fromCharCode(97+qi)})</span>
+                                <input type="text" className="flex-1 p-1 border-b text-sm" value={q.text} onChange={(e) => { const newQs=[...grp.questions]; newQs[qi].text=e.target.value; updateStructured('THPTQG', 'part2', i, 'questions', newQs); }}/>
+                                <select className="text-xs p-1 border" value={q.correct} onChange={(e) => { const newQs=[...grp.questions]; newQs[qi].correct=e.target.value; updateStructured('THPTQG', 'part2', i, 'questions', newQs); }}><option value="T">Đ</option><option value="F">S</option></select>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-8 flex flex-col sm:flex-row justify-end gap-4">
+                <button onClick={() => setIsInPreview(true)} className="bg-gray-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-600 shadow-lg">Xem trước cấu trúc</button>
+                <button onClick={handleSave} className="bg-[#D13B7C] text-white px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-pink-700">Xuất Bản Đề Thi</button>
+              </div>
+            </div>
+          );
+        };
+
+        const StudentDashboard = ({ exams, classes, user, allUsers, joinClass, onEnterClass }) => {
+          const [joinId, setJoinId] = useState('');
+          const [searchQuery, setSearchQuery] = useState('');
+          const myJoinedClasses = (allUsers.find(u => u.username === user.username)?.joinedClasses) || [];
+          const filteredClasses = myJoinedClasses.filter(id => {
+            const classInfo = classes.find(c => c.id === id);
+            const name = classInfo?.name || id;
+            return name.toLowerCase().includes(searchQuery.toLowerCase());
+          });
+          const handleJoinClass = () => {
+            const cleanId = joinId.trim();
+            if (!cleanId) return;
+            if (joinClass(user.username, cleanId)) { setJoinId(''); alert('Tham gia lớp thành công!'); }
+          };
+          return (
+            <div className="space-y-8">
+              <header className="text-center sm:text-left">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Xin chào, {user?.fullName} 👋</h1>
+                <p className="text-gray-500">Chọn lớp học của bạn để làm bài thi.</p>
+              </header>
+              <div className="space-y-6">
+                <section className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <h2 className="text-xl font-semibold text-gray-700 flex items-center"><div className="mr-2 text-pink-600"><IconUsers /></div> Lớp Học Của Tôi</h2>
+                    <div className="relative w-full max-w-xs">
+                      <div className="absolute left-3 top-2.5 text-gray-400"><IconSearch /></div>
+                      <input type="text" placeholder="Tìm lớp tên..." className="w-full pl-10 pr-4 py-2 border rounded-full text-sm outline-none focus:ring-2 focus:ring-pink-400 shadow-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {filteredClasses.length === 0 ? <div className="p-10 text-center bg-white rounded-2xl border-2 border-dashed border-gray-200 text-gray-400">{searchQuery ? "Không thể tìm thấy lớp này." : "Bạn chưa tham gia lớp học nào."}</div> : filteredClasses.map((id, i) => {
+                      const classInfo = classes.find(c => c.id === id);
+                      return <div key={i} onClick={() => onEnterClass(id)} className="bg-white p-4 rounded-2xl shadow-sm border border-pink-100 hover:border-pink-400 active:scale-95 transition-all cursor-pointer flex items-center justify-between group">
+                        <div className="flex items-center gap-4"><div className="bg-pink-100 text-pink-600 p-3 rounded-xl group-hover:bg-pink-600 group-hover:text-white transition-colors"><IconBook /></div><div><h3 className="text-lg font-bold text-gray-800">{classInfo?.name || `Lớp ${id}`}</h3><p className="text-xs text-gray-500 font-mono">ID: {id}</p></div></div>
+                        <div className="text-pink-600 font-bold text-sm flex items-center gap-1">Vào Lớp <span className="group-hover:translate-x-1 transition-transform">{"\u2192"}</span></div>
+                      </div>
+                    })}
+                  </div>
+                </section>
+                <section className="bg-white p-6 rounded-2xl shadow-sm border border-pink-100">
+                  <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center"><div className="mr-2 text-pink-600"><IconSearch /></div> Tham Gia Lớp Mới</h2>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input type="text" placeholder="Nhập ID lớp mã hóa (VD: CLS1234)..." className="flex-1 px-4 py-3 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-pink-400" value={joinId} onChange={(e) => setJoinId(e.target.value)} />
+                    <button type="button" onClick={handleJoinClass} className="bg-[#D13B7C] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-pink-700 active:scale-95 transition-all w-full sm:w-auto">Tham gia</button>
+                  </div>
+                </section>
+              </div>
+            </div>
+          );
+        };
+
+        const ClassRoom = ({ role, classId, exams = [], allUsers = [], results = [], user, onBack, setCurrentExam, setView, setAllUsers }) => {
+          const [activeTab, setActiveTab] = useState('exams');
+          const [selectedExamId, setSelectedExamId] = useState(null);
+          const [studentListInput, setStudentListInput] = useState('');
+          const classExams = exams.filter(ex => ex.classId === classId);
+          const classMembers = allUsers.filter(u => u.joinedClasses && u.joinedClasses.includes(classId));
+          const examResults = selectedExamId ? results.filter(r => r.examId === selectedExamId) : [];
+
+          const handleAddStudents = () => {
+            if (!studentListInput.trim()) return;
+            const lines = studentListInput.split('\n');
+            const newUsers = [...allUsers];
+            let count = 0;
+            lines.forEach(line => {
+              const parts = line.split(' - ');
+              if (parts.length >= 3) {
+                const uname = parts[0].trim(); const pword = parts[1].trim(); const fname = parts[2].trim();
+                if (uname) {
+                  let userIdx = newUsers.findIndex(u => u.username === uname);
+                  if (userIdx > -1) {
+                    const currentJoined = newUsers[userIdx].joinedClasses || [];
+                    const updatedJoined = [...currentJoined, classId].filter((v, i, a) => a.indexOf(v) === i);
+                    newUsers[userIdx] = { ...newUsers[userIdx], password: pword, fullName: fname, joinedClasses: updatedJoined };
+                  } else {
+                    newUsers.push({ username: uname, password: pword, fullName: fname, joinedClasses: [classId] });
+                  }
+                  count++;
+                }
+              }
+            });
+            setAllUsers(newUsers);
+            setStudentListInput('');
+            alert(`Đã thêm/cập nhật thành công ${count} học sinh vào lớp ${classId}`);
+          };
+
+          return (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <button onClick={onBack} className="p-2 hover:bg-pink-100 rounded-full text-pink-600">←</button>
+                <h1 className="text-xl md:text-3xl font-bold text-gray-800">Lớp: <span className="text-pink-600">{classId}</span></h1>
+              </div>
+              <div className="flex gap-4 border-b border-gray-200 mb-6 overflow-x-auto">
+                {role === 'admin' ? (
+                  <>
+                    <button onClick={() => setActiveTab('students')} className={`pb-2 px-4 font-bold whitespace-nowrap ${activeTab === 'students' ? 'border-b-4 border-pink-600 text-pink-600' : 'text-gray-500'}`}> Học Sinh</button>
+                    <button onClick={() => setActiveTab('exams')} className={`pb-2 px-4 font-bold whitespace-nowrap ${activeTab === 'exams' ? 'border-b-4 border-pink-600 text-pink-600' : 'text-gray-500'}`}> Bài Thi & Điểm Số</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => setActiveTab('exams')} className={`pb-2 px-4 font-bold whitespace-nowrap ${activeTab === 'exams' ? 'border-b-4 border-pink-600 text-pink-600' : 'text-gray-500'}`}> Bài Thi</button>
+                    <button onClick={() => setActiveTab('grades')} className={`pb-2 px-4 font-bold whitespace-nowrap ${activeTab === 'grades' ? 'border-b-4 border-pink-600 text-pink-600' : 'text-gray-500'}`}> Điểm số</button>
+                  </>
+                )}
+              </div>
+              {role === 'admin' && (
+                <>
+                  {activeTab === 'students' && (
+                    <div className="space-y-6">
+                      <div className="bg-white p-6 rounded-xl border space-y-4">
+                        <div className="flex items-center gap-2 text-gray-600 mb-2 text-sm"><IconFile /><span className="font-medium">Định dạng: <br/> <code className="bg-gray-100 p-1 rounded text-pink-600 font-bold">tên người dùng - mật khẩu - họ tên</code></span></div>
+                        <textarea className="w-full p-3 border rounded-lg text-sm h-32 outline-none focus:ring-2 focus:ring-pink-400" placeholder="Ví dụ: nnban - 123 - Nguyễn Ngọc Bảo An" value={studentListInput} onChange={(e) => setStudentListInput(e.target.value)} />
+                        <button type="button" onClick={handleAddStudents} className="bg-pink-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-pink-700 transition-colors flex items-center gap-2"><IconPlus /> Thêm Học Sinh</button>
+                      </div>
+                      <div className="bg-white rounded-xl border overflow-hidden">
+                        <table className="w-full text-left text-sm"><thead className="bg-gray-50 border-b"><tr className="text-gray-600"><th className="p-4">Họ tên</th><th className="p-4">Tài khoản</th></tr></thead>
+                        <tbody className="divide-y">{classMembers.length === 0 ? <tr className="text-gray-400"><td colSpan="2" className="p-10 text-center">Không có học sinh.</td></tr> : classMembers.map((m, i) => <tr key={i} className="hover:bg-pink-50"><td className="p-4">{m.fullName}</td><td className="p-4">{m.username}</td></tr>)}</tbody></table>
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === 'exams' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-1 space-y-3">
+                        <h3 className="font-bold text-gray-700 mb-3">Chọn bài thi để xem điểm</h3>
+                        {classExams.map(ex => (<div key={ex.id} onClick={() => setSelectedExamId(ex.id)} className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedExamId === ex.id ? 'bg-pink-600 text-white border-pink-600' : 'bg-white text-gray-700 hover:border-pink-400'}`}><p className="font-bold">{ex.title}</p><p className="text-xs opacity-80">{ex.type} • {ex.questions?.length} câu</p></div>))}
+                      </div>
+                      <div className="lg:col-span-2 bg-white p-6 rounded-xl border">
+                        {selectedExamId ? (
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center mb-4"><h3 className="text-lg md:text-xl font-bold">Kết quả bài: {exams.find(e=>e.id===selectedExamId)?.title}</h3><span className="text-sm text-gray-500">{examResults.length} bài nộp</span></div>
+                            <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-gray-50 border-b"><tr className="text-gray-600"><th className="p-3">Học sinh</th><th className="p-3">Điểm</th><th className="p-3">Hành động</th></tr></thead>
+                            <tbody className="divide-y">{examResults.length === 0 ? <tr className="text-gray-400"><td colSpan="3" className="p-8 text-center">Chưa có ai hoàn thành bài thi này.</td></tr> : examResults.map((res, i) => (<tr key={i} className="hover:bg-pink-50"><td className="p-3">{res.userName}</td><td className="p-3 font-bold text-pink-600">{res.score}</td><td className="p-3"><button className="text-blue-600 underline text-xs">Xem chi tiết</button></td></tr>))}</tbody></table></div>
+                          </div>
+                        ) : <div className="h-full flex items-center justify-center text-gray-400 italic p-10 text-center">Vui lòng chọn một bài thi bên trái để xem điểm.</div>}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              {role === 'student' && (
+                <>
+                  {activeTab === 'exams' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <h3 className="font-bold text-gray-700 mb-3">Bài thi hiện có</h3>
+                        {classExams.map(exam => {
+                          const hasSubmitted = results.some(r => r.userId === user.username && r.examId === exam.id);
+                          const isLimited = !exam.allowMultipleAttempts;
+                          if (hasSubmitted && isLimited) return null;
+                          return <div key={exam.id} className="bg-white p-4 rounded-xl border flex justify-between items-center"><div><p className="font-bold">{exam.title}</p><p className="text-xs text-gray-500">{exam.type} • {exam.duration} phút</p></div><button type="button" onClick={() => { setCurrentExam(exam); setView('taking-exam'); }} className="bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-bold"> Làm Bài</button></div>;
+                        })}
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="font-bold text-gray-700 mb-3">Bài thi đã nộp</h3>
+                        {results.filter(r => r.userId === user.username && classExams.some(ex => ex.id === r.examId)).map((res, i) => {
+                          const exam = exams.find(ex => ex.id === res.examId);
+                          return <div key={i} className="bg-white p-4 rounded-xl border flex justify-between items-center"><div><p className="font-bold">{exam?.title}</p><p className="text-xs"> Điểm: {res.score}</p></div><button type="button" onClick={() => { setCurrentExam(exam); setView('taking-exam'); }} className="text-pink-600 underline text-sm"> Xem lại</button></div>;
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl border overflow-hidden">
+                      <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-gray-50 border-b"><tr className="text-gray-600"><th className="p-4">Bài thi</th><th className="p-4">Điểm</th><th className="p-4">Thời gian</th></tr></thead>
+                      <tbody className="divide-y">{results.filter(r => r.userId === user.username).length === 0 ? <tr className="text-gray-400"><td colSpan="3" className="p-10 text-center">Bạn chưa có điểm số nào.</td></tr> : results.filter(r => r.userId === user.username).map((res, i) => <tr key={i} className="hover:bg-pink-50"><td className="p-4">{exams.find(ex => ex.id === res.examId)?.title}</td><td className="p-4 font-bold text-pink-600">{res.score}</td><td className="p-4 text-gray-500">{res.date}</td></tr>)}</tbody></table></div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        };
+
+        const ExamInterface = ({ exam, onFinish, onSubmit, user }) => {
+          const [answers, setAnswers] = useState({});
+          const [timeLeft, setTimeLeft] = useState(exam.duration * 60);
+          const [isSubmitted, setIsSubmitted] = useState(false);
+          const timerRef = useRef(null);
+          useEffect(() => {
+            timerRef.current = setInterval(() => {
+              setTimeLeft(prev => { if (prev <= 1) { clearInterval(timerRef.current); handleFinish(); return 0; } return prev - 1; });
+            }, 1000);
+            return () => clearInterval(timerRef.current);
+          }, []);
+          const formatTime = (seconds) => { const m = Math.floor(seconds / 60); const s = seconds % 60; return `${m}:${s < 10 ? '0' : ''}${s}`; };
+          const handleAnswerChange = (qId, value) => { setAnswers(prev => ({ ...prev, [qId]: value })); };
+          const handleSubAnswerChange = (qId, subId, value) => { setAnswers(prev => { const currentQ = prev[qId] || {}; return { ...prev, [qId]: { ...currentQ, [subId]: value } }; }); };
+          const calculateScore = () => {
+            if (!exam || !exam.questions) return "0.00";
+            let totalScore = 0;
+            exam.questions.forEach(q => {
+              const ans = answers[q.id]; if (!ans) return;
+              if (q.type === 'MCQ') { if (ans === q.correctAnswer) totalScore += (exam.type === 'VSAT' ? 6 : 0.25); }
+              else if (q.type === 'GRID_TF') {
+                let correctSubs = 0; q.subQuestions.forEach(sq => { if (ans[sq.id] === sq.correct) correctSubs++; });
+                if (exam.type === 'VSAT') totalScore += correctSubs * 1; else { const thptGrd=[0, 0.1, 0.25, 0.5, 1.0]; totalScore += thptGrd[correctSubs] || 0; }
+              } else if (q.type === 'MATCH') {
+                let matchCorrect = 0; const correctMap = q.correctAnswer.split(';').reduce((acc, curr) => { const [id, val] = curr.split('#'); if (id && val) acc[id.trim()] = val.trim(); return acc; }, {});
+                Object.keys(ans).forEach(id => { if (ans[id] === correctMap[id]) matchCorrect++; }); totalScore += matchCorrect * 1;
+              } else if (q.type === 'SHORT') { if (ans.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()) totalScore += 1; }
+            });
+            return totalScore.toFixed(2);
+          };
+          const handleFinish = () => { onSubmit(exam.id, calculateScore(), answers); setIsSubmitted(true); };
+          if (isSubmitted) return <div className="min-h-screen bg-white flex items-center justify-center p-4"><div className="text-center space-y-4"><div className="bg-green-100 text-green-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"><IconCheck /></div><h1 className="text-2xl font-bold">Hoàn Thành!</h1><p className="text-gray-500">Điểm của bạn là: <span className="text-2xl font-bold text-pink-600">{calculateScore()}</span></p><button type="button" onClick={onFinish} className="bg-[#D13B7C] text-white px-6 py-2 rounded-lg font-bold">Quay Lại</button></div></div>;
+          return (
+            <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
+              <div className="max-w-4xl mx-auto space-y-8">
+                <div className="sticky top-0 z-10 bg-white p-4 rounded-xl shadow-md flex flex-col sm:flex-row justify-between items-center gap-4 border-l-8 border-[#D13B7C]">
+                  <div className="flex items-center gap-4"><div className="bg-pink-100 text-pink-700 p-2 rounded-lg flex items-center gap-2 font-bold"><IconClock /> {formatTime(timeLeft)}</div><div><h1 className="text-lg font-bold">{exam?.title}</h1><span className="text-xs text-gray-500">{exam?.type}</span></div></div>
+                  <button type="button" onClick={handleFinish} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 shadow-lg w-full sm:w-auto">Nộp Bài</button>
+                </div>
+                <div className="space-y-6">
+                  {exam?.questions?.map((q, idx) => (
+                    <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+                      <div className="flex gap-3"><span className="bg-pink-100 text-pink-700 px-2 py-1 rounded text-xs font-bold"> Câu {q.id}</span><p className="font-medium text-gray-800">{q.text}</p></div>
+                      {q.context && <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 italic border-l-4 border-gray-300">{q.context}</div>}
+                      {q.type === 'MCQ' && <div className="grid grid-cols-1 gap-2">{q.options?.map((opt, oIdx) => (<label key={oIdx} className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${answers[q.id] === opt.letter ? 'bg-pink-50 border-pink-500' : 'hover:bg-gray-50 border-gray-200'}`}><input type="radio" name={`q-${q.id}`} className="mr-3" onChange={() => handleAnswerChange(q.id, opt.letter)} checked={answers[q.id] === opt.letter} /><span className="text-sm">{opt.text}</span></label>))}</div>}
+                      {q.type === 'GRID_TF' && (<div className="overflow-x-auto"><table className="w-full text-sm text-left border"><thead className="bg-gray-100"><tr className="text-gray-600"><th className="p-2 border">Nội dung nhận định</th><th className="p-2 border text-center w-20">Đúng</th><th className="p-2 border text-center w-20">Sai</th></tr></thead><tbody>{q.subQuestions?.map(sq => (<tr key={sq.id} className="hover:bg-gray-50"><td className="p-2 border">{sq.text}</td><td className="p-2 border text-center"><input type="radio" name={`q-${q.id}-${sq.id}`} onChange={() => handleSubAnswerChange(q.id, sq.id, 'T')} checked={answers[q.id]?.[sq.id] === 'T'} /></td><td className="p-2 border text-center"><input type="radio" name={`q-${q.id}-${sq.id}`} onChange={() => handleSubAnswerChange(q.id, sq.id, 'F')} checked={answers[q.id]?.[sq.id] === 'F'} /></td></tr>))}</tbody></table></div>)}
+                      {q.type === 'MATCH' && (<div className="space-y-4"><div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"><div className="bg-gray-50 p-3 rounded-lg border"><p className="font-bold mb-2">Cột A</p>{q.colA?.map(item => <div key={item.id} className="mb-1">{item.id}. {item.text}</div>)}</div><div className="bg-gray-50 p-3 rounded-lg border"><p className="font-bold mb-2">Cột B</p>{q.colB?.map(item => <div key={item.id} className="mb-1">{item.id}. {item.text}</div>)}</div></div><div className="flex flex-wrap gap-4">{q.colA?.map(item => (<div key={item.id} className="flex items-center gap-2"><span className="text-sm font-medium">{item.id}:</span><select className="border rounded p-1 text-sm" onChange={(e) => handleAnswerChange(q.id, { ...answers[q.id], [item.id]: e.target.value })} value={answers[q.id]?.[item.id] || ''}><option value="">--</option>{q.colB?.map(b => <option key={b.id} value={b.id}>{b.id}</option>)}</select></div>))}</div></div>)}
+                      {q.type === 'SHORT' && <input type="text" className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-pink-400" placeholder="Nội dung câu trả lời ngắn..." onChange={(e) => handleAnswerChange(q.id, e.target.value)} value={answers[q.id] || ''} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
